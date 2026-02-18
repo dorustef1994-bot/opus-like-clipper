@@ -12,7 +12,7 @@ export async function POST(
   const { id } = await ctx.params;
   const jobKey = `job:${id}`;
 
-  const data: any = await redis.hGetAll(jobKey);
+  const data: any = await redis.hgetall(jobKey);
   if (!data || !data.id) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
@@ -20,7 +20,7 @@ export async function POST(
   const body = await req.json().catch(() => ({}));
   const messages = Array.isArray(body.messages) ? body.messages : [];
 
-  await redis.hSet(jobKey, {
+  await redis.hset(jobKey, {
     messages: JSON.stringify(messages),
   });
 

@@ -8,9 +8,8 @@ export async function GET() {
     await ensureRedis();
     const pong = await redis.ping();
     
-    // Check history key
-    const historyCount = await redis.lLen("jobs:history");
-    const queueLen = await redis.lLen("jobs:queue");
+    const historyCount = await redis.llen("jobs:history");
+    const queueLen = await redis.llen("jobs:queue");
 
     return NextResponse.json({
       status: "ok",

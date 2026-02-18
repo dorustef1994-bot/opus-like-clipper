@@ -12,13 +12,13 @@ export async function POST(
   const { id } = await ctx.params;
   const jobKey = `job:${id}`;
 
-  const data: any = await redis.hGetAll(jobKey);
+  const data: any = await redis.hgetall(jobKey);
   if (!data || !data.id) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  await redis.hSet(jobKey, { status: "queued", error: "" });
-  await redis.lPush("jobs:queue", id);
+  await redis.hset(jobKey, { status: "queued", error: "" });
+  await redis.lpush("jobs:queue", id);
 
   return NextResponse.json({ ok: true });
 }

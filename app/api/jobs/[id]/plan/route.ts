@@ -12,7 +12,7 @@ export async function POST(
   const { id } = await ctx.params;
   const jobKey = `job:${id}`;
 
-  const data: any = await redis.hGetAll(jobKey);
+  const data: any = await redis.hgetall(jobKey);
   if (!data || !data.id) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
@@ -21,15 +21,14 @@ export async function POST(
   const config = body.config ?? {};
   const messages = Array.isArray(body.messages) ? body.messages : [];
 
-  // store settings/chat + enqueue
-  await redis.hSet(jobKey, {
+  await redis.hset(jobKey, {
     config: JSON.stringify(config),
     messages: JSON.stringify(messages),
     status: "queued",
     error: "",
   });
 
-  await redis.lPush("jobs:queue", id);
+  await redis.lpush("jobs:queue", id);
 
   return NextResponse.json({ ok: true });
 }

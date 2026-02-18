@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   const editJobId = nanoid();
   const editKey = `job:${editJobId}`;
 
-  await redis.hSet(editKey, {
+  await redis.hset(editKey, {
     id: editJobId,
     youtubeUrl,
     status: "queued",
@@ -31,11 +31,10 @@ export async function POST(req: Request) {
     clips: JSON.stringify([]),
   });
 
-  await redis.lPush(HISTORY_KEY, editJobId);
-  await redis.lTrim(HISTORY_KEY, 0, HISTORY_LIMIT - 1);
+  await redis.lpush(HISTORY_KEY, editJobId);
+  await redis.ltrim(HISTORY_KEY, 0, HISTORY_LIMIT - 1);
 
-  // enqueue for worker
-  await redis.lPush("jobs:queue", editJobId);
+  await redis.lpush("jobs:queue", editJobId);
 
   return NextResponse.json({ jobId: editJobId });
 }

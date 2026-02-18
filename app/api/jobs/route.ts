@@ -20,10 +20,10 @@ export async function POST(req: Request) {
   const jobId = nanoid();
   const jobKey = `job:${jobId}`;
 
-  await redis.hSet(jobKey, {
+  await redis.hset(jobKey, {
     id: jobId,
     youtubeUrl,
-    status: "draft", // draft until user clicks Generate
+    status: "draft",
     createdAt: Date.now().toString(),
     error: "",
     messages: JSON.stringify([]),
@@ -31,9 +31,8 @@ export async function POST(req: Request) {
     clips: JSON.stringify([]),
   });
 
-  // Add to history (most recent first), keep last N
-  await redis.lPush(HISTORY_KEY, jobId);
-  await redis.lTrim(HISTORY_KEY, 0, HISTORY_LIMIT - 1);
+  await redis.lpush(HISTORY_KEY, jobId);
+  await redis.ltrim(HISTORY_KEY, 0, HISTORY_LIMIT - 1);
 
   return NextResponse.json({ jobId });
 }
