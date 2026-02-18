@@ -1,7 +1,7 @@
-import { createClient, type RedisClientType } from "redis";
+import { createClient } from "redis";
 
 declare global {
-  var __redisClient: RedisClientType | undefined;
+  var __redisClient: any;
   var __redisConnecting: Promise<void> | undefined;
 }
 
@@ -15,24 +15,13 @@ function getRedisUrl() {
   return url;
 }
 
-// Lazy singleton with proper connection handling
+// Simple singleton with proper connection handling
 function createRedisClient() {
   const client = createClient({
     url: getRedisUrl(),
-    socket: {
-      reconnectStrategy: (retries) => {
-        if (retries > 20) {
-          console.error("Redis: Max reconnection attempts reached");
-          return new Error("Max retries reached");
-        }
-        const delay = Math.min(100 + retries * 100, 3000);
-        console.log(`Redis: Reconnecting in ${delay}ms (attempt ${retries})`);
-        return delay;
-      },
-    },
   });
 
-  client.on("error", (err) => {
+  client.on("error", (err: Error) => {
     console.error("Redis client error:", err.message);
   });
 
@@ -47,15 +36,14 @@ function createRedisClient() {
   return client;
 }
 
-export const redis: RedisClientType =
-  global.__redisClient ??= createRedisClient();
+export const redis = global.__redisClient ??= createRedisClient();
 
 // Ensure connection is established before use
 export async function ensureRedis(): Promise<void> {
   if (redis.isOpen) return;
 
   if (!global.__redisConnecting) {
-    global.__redisConnecting = redis.connect().catch((err) => {
+    global.__redisConnecting = redis.connect().catch((err: Error) => {
       global.__redisConnecting = undefined;
       throw err;
     });
