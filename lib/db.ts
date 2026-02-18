@@ -1,53 +1,41 @@
-import { createClient } from "redis";
+import { Redis } from "@upstash/redis";
 
 declare global {
-  var __redisClient: any;
-  var __redisConnecting: Promise<void> | undefined;
+  var __redisClient: Redis | undefined;
 }
 
-function getRedisUrl() {
-  const url = process.env.REDIS_URL;
+function getUpstashUrl() {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
   if (!url) {
     throw new Error(
-      "REDIS_URL is not set. Example: redis://:PASSWORD@127.0.0.1:6380"
+      "UPSTASH_REDIS_REST_URL is not set. Example: https://xxx.upstash.io"
     );
   }
   return url;
 }
 
-// Simple singleton with proper connection handling
-function createRedisClient() {
-  const client = createClient({
-    url: getRedisUrl(),
-  });
-
-  client.on("error", (err: Error) => {
-    console.error("Redis client error:", err.message);
-  });
-
-  client.on("connect", () => {
-    console.log("Redis: Connected");
-  });
-
-  client.on("reconnecting", () => {
-    console.log("Redis: Reconnecting...");
-  });
-
-  return client;
+function getUpstashToken() {
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!token) {
+    throw new Error(
+      "UPSTASH_REDIS_REST_TOKEN is not set"
+    );
+  }
+  return token;
 }
 
-export const redis = global.__redisClient ??= createRedisClient();
+// Lazy singleton with proper connection handling
+function createRedisClient() {
+  return new Redis({
+    url: getUpstashUrl(),
+    token: getUpstashToken(),
+  });
+}
 
-// Ensure connection is established before use
+export const redis: Redis = global.__redisClient ??= createRedisClient();
+
+// Ensure connection (Upstash is HTTP-based, always ready)
 export async function ensureRedis(): Promise<void> {
-  if (redis.isOpen) return;
-
-  if (!global.__redisConnecting) {
-    global.__redisConnecting = redis.connect().catch((err: Error) => {
-      global.__redisConnecting = undefined;
-      throw err;
-    });
-  }
-
-  await global.__redisConnecting;
+  // Upstash HTTP client is always ready
+  return Promise.resolve();
 }
