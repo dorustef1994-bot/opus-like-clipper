@@ -20,7 +20,6 @@ function createRedisClient() {
   const client = createClient({
     url: getRedisUrl(),
     socket: {
-      keepAlive: 5000,
       reconnectStrategy: (retries) => {
         if (retries > 20) {
           console.error("Redis: Max reconnection attempts reached");
