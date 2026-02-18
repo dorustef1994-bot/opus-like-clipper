@@ -26,6 +26,7 @@ export default function Home() {
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
   const [job, setJob] = useState<Job | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   // Chat messages (client-only display)
   const [chatInput, setChatInput] = useState("");
@@ -66,13 +67,21 @@ export default function Home() {
   }
 
   async function createDraftJob() {
+    setCreateError(null);
+    console.log("Creating draft job with URL:", youtubeUrl);
     const res = await fetch("/api/jobs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ youtubeUrl }),
     });
+    console.log("Response status:", res.status);
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error ?? "Failed to create job");
+    console.log("Response data:", data);
+    if (!res.ok) {
+      const err = data.error ?? `HTTP ${res.status}: Failed to create job`;
+      setCreateError(err);
+      throw new Error(err);
+    }
     setJobId(data.jobId);
     setMessages([]);
     setJob({ id: data.jobId, status: "draft", error: "", clips: [], youtubeUrl });
@@ -218,11 +227,17 @@ export default function Home() {
             />
             <button
               style={{ padding: "12px 16px", borderRadius: 10, border: "1px solid #ddd", cursor: "pointer" }}
-              onClick={() => createDraftJob().catch((e) => alert(e.message))}
+              onClick={() => createDraftJob().catch((e) => setCreateError(e.message))}
             >
               Clip
             </button>
           </div>
+
+          {createError && (
+            <div style={{ marginTop: 10, padding: 10, background: "#fee", color: "crimson", borderRadius: 8 }}>
+              Error: {createError}
+            </div>
+          )}
 
           {jobId && (
             <div style={{ marginTop: 14, border: "1px solid #eee", borderRadius: 12, padding: 12 }}>
